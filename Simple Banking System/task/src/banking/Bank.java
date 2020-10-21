@@ -24,10 +24,10 @@ class Bank {
             printMainMenu();
             switch (scanner.next()) {
                 case "1":
-                    accountCreator();
+                    Account accountAccess = Account.getInstance();
+                    accountAccess.accountCreator();
                     Database databaseAccess = Database.getInstance();
-                    databaseAccess.createTableCard();
-                    databaseAccess.insertData(getAccountNo(), String.valueOf(getAccountCardNum()), String.valueOf(getAccountPin()), getAccountBalance());
+                    databaseAccess.insertNewAccount(getAccountNo(), String.valueOf(getAccountCardNum()), String.valueOf(getAccountPin()), getAccountBalance());
                     break;
                 case "2":
                     Logger logger = new Logger();

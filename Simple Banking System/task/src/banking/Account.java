@@ -5,9 +5,11 @@ import java.util.Scanner;
 
 import static banking.Bank.*;
 
-
 class Account {
-    private static Account[] clientAccount = new Account[1000];
+
+    private static volatile Account accInstance = null;
+    private Account() { }
+
     private static int accountNo = 0;
 
     private static long accountCardNum;
@@ -26,26 +28,78 @@ class Account {
         return accountBalance;
     }
 
-
-    Account(){
-
+    public static int getAccountNo() {
+        return accountNo;
     }
 
-    Account(long accountCardNum, String accountPin) {
-        this.accountCardNum = accountCardNum;
-        this.accountPin = accountPin;
-        this.accountBalance = 0L;
+    public static Account getInstance() {
+        if (accInstance == null) { //if there is no instance available... create new one
+            accInstance = new Account();
+        }
+        return accInstance;
     }
 
+    void accountCreator() {
 
-    static void accountCreator() {
-
-        long cardNum = cardGenerator();
-        String pin = pinGenerator();
-
-        clientAccount[accountNo++] = new Account(cardNum, pin);
+        accountCardNum = cardGenerator();
+        accountPin = pinGenerator();
+        accountBalance = 0L;
+        accountNo++;
         printNewAccountMessage(accountCardNum, accountPin);
+    }
 
+    void insideAccount(long insertedCard, String insertedPin) {
+        Scanner scanner = new Scanner(System.in);
+        boolean loggedIn = true;
+
+        while (isSessionOpen() && loggedIn) {
+            printInsideAccountMessage();
+            switch (scanner.next()) {
+                case "1":
+                    checkBalance(insertedCard);
+                    break;
+                case "2":
+                    addIncome(insertedCard);
+                    break;
+                case "3":
+                    doTransfer();
+                    break;
+                case "4":
+                    closeAccount();
+                    break;
+                case "5":
+                    System.out.println("\nYou have successfully logged out!\n");
+                    loggedIn = false;
+                    break;
+                case "0":
+                    System.out.println("\nBye!");
+                    setSessionOpen(false);
+                    break;
+            }
+        }
+    }
+
+    private void checkBalance(long insertedCard) {
+        Database databaseAccess = Database.getInstance();
+        databaseAccess.checkBalance(insertedCard);
+
+        //System.out.println("\nBalance: " + getAccountBalance() + "\n");
+    }
+
+    private void addIncome(long insertedCard) {
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.println("Enter income:");
+        long income = scanner.nextLong();
+
+        Database databaseAccess = Database.getInstance();
+        databaseAccess.addIncome(insertedCard, income);
+    }
+
+    private void closeAccount() {
+    }
+
+    private void doTransfer() {
     }
 
     private static String pinGenerator() {
@@ -57,7 +111,7 @@ class Account {
 
     private static long cardGenerator() {
 
-        final int[] BIN = new int[] {4, 0, 0, 0, 0, 0};
+        final int[] BIN = new int[]{4, 0, 0, 0, 0, 0};
         final int[] accountIdentifier = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         final int[] cardNumArr = new int[BIN.length + accountIdentifier.length];
 
@@ -107,28 +161,6 @@ class Account {
         return numInLong;
     }
 
-    void insideAccount() {
-        Scanner scanner = new Scanner(System.in);
-        boolean loggedIn = true;
-
-        while (isSessionOpen() && loggedIn) {
-            printInsideAccountMessage();
-            switch (scanner.nextInt()) {
-                case 1:
-                    System.out.println("\nBalance: " + getAccountBalance() + "\n");
-                    break;
-                case 2:
-                    System.out.println("\nYou have successfully logged out!\n");
-                    loggedIn = false;
-                    break;
-                case 0:
-                    System.out.println("\nBye!");
-                    setSessionOpen(false);
-                    break;
-            }
-        }
-    }
-
     private static void printNewAccountMessage(long cardNumber, String pin) {
         System.out.println();
         System.out.println("Your card has been created");
@@ -141,8 +173,15 @@ class Account {
     private static void printInsideAccountMessage() {
         System.out.println();
         System.out.println("1. Balance");
-        System.out.println("2. Log out");
+        System.out.println("2. Add income");
+        System.out.println("3. Do transfer");
+        System.out.println("4. Close account");
+        System.out.println("5. Log out");
         System.out.println("0. Exit");
         System.out.println();
     }
+
+
+
+
 }

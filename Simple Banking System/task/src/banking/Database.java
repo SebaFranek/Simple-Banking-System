@@ -2,22 +2,19 @@ package banking;
 
 import org.sqlite.SQLiteDataSource;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 
 class Database {
 
 
-    private static volatile Database databaseInstance = null;
-    private Database(){};
+    private static volatile Database dbInstance = null;
+    private Database(){}
 
     public static Database getInstance() {
-        if (databaseInstance == null) { //if there is no instance available... create new one
-            databaseInstance = new Database();
+        if (dbInstance == null) { //if there is no instance available... create new one
+            dbInstance = new Database();
         }
-        return databaseInstance;
+        return dbInstance;
     }
 
 
@@ -58,30 +55,47 @@ class Database {
         }
     }
 
-    void insertData(int id, String number, String pin, long balance){
+    void insertNewAccount(int id, String number, String pin, long balance){
 
         String sql = "INSERT INTO card(id,number,pin,balance) VALUES(?,?,?,?)";
 
         try (Connection con = dataSource.getConnection();
-             PreparedStatement pstmt = con.prepareStatement(sql)) {
-            pstmt.setInt(1, id);
-            pstmt.setString(2, number);
-            pstmt.setString(3, pin);
-            pstmt.setLong(4, balance);
-            pstmt.executeUpdate();
+             PreparedStatement statement = con.prepareStatement(sql)) {
+            statement.setInt(1, id);
+            statement.setString(2, number);
+            statement.setString(3, pin);
+            statement.setLong(4, balance);
+            statement.executeUpdate();
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
     }
 
-     /*void dropTable(){
-        String sql = "DROP TABLE card";
+    void addIncome(long insertedCard, long income){
+        String sql = "UPDATE card\n" +
+                "SET balance = balance + " + income + "\n" +
+                "WHERE number = " + insertedCard + ";";
 
         try (Connection con = dataSource.getConnection();
-             PreparedStatement pstmt = con.prepareStatement(sql)) {
-            pstmt.executeUpdate();
+             PreparedStatement statement = con.prepareStatement(sql)) {
+            statement.executeUpdate();
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
-    }*/
+    }
+
+    void checkBalance(long insertedCard){
+        String sql = "SELECT balance FROM card";
+        //String sql = "SELECT balance FROM card WHERE number =" + insertedCard + ";";
+
+        try (Connection con = dataSource.getConnection();
+             PreparedStatement statement = con.prepareStatement(sql);
+             ResultSet result = statement.executeQuery(sql)){
+            while (result.next()) {
+                System.out.println(result.getLong("balance") +  "\t");
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
 }
