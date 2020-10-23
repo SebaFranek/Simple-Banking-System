@@ -7,7 +7,7 @@ import static banking.Account.*;
 
 class Logger {
 
-    private long insertedCard;
+    private String insertedCard;
     private String insertedPin;
 
     void attemptLogin() {
@@ -16,11 +16,19 @@ class Logger {
 
         System.out.println();
         System.out.println("Enter your card number:");
-        insertedCard = scanner.nextLong();
+        insertedCard = scanner.nextLine();
         System.out.println("Enter your PIN:");
-        insertedPin = scanner.next();
+        insertedPin = scanner.nextLine();
 
-        if (insertedCard != getAccountCardNum() || !insertedPin.equals(getAccountPin())) {
+        //Database databaseAccess = Database.getInstance();
+        //databaseAccess.checkCard(insertedCard);
+
+        //robotka na później - porównywnaie z ostatnią kartą z bazy danych
+        //aktualnie porównuje ze zmienną deklarowaną przy tworzeniu konta
+        //poniżej
+
+
+        if (!insertedCard.equals(getAccountCardNum()) || !insertedPin.equals(getAccountPin())) {
             System.out.println("Wrong card number or PIN!");
             System.out.println();
         } else {

@@ -8,15 +8,17 @@ import static banking.Bank.*;
 class Account {
 
     private static volatile Account accInstance = null;
-    private Account() { }
+
+    private Account() {
+    }
 
     private static int accountNo = 0;
 
-    private static long accountCardNum;
+    private static String accountCardNum;
     private static String accountPin;
     private static long accountBalance;
 
-    public static long getAccountCardNum() {
+    public static String getAccountCardNum() {
         return accountCardNum;
     }
 
@@ -48,7 +50,7 @@ class Account {
         printNewAccountMessage(accountCardNum, accountPin);
     }
 
-    void insideAccount(long insertedCard, String insertedPin) {
+    void insideAccount(String insertedCard, String insertedPin) {
         Scanner scanner = new Scanner(System.in);
         boolean loggedIn = true;
 
@@ -56,13 +58,14 @@ class Account {
             printInsideAccountMessage();
             switch (scanner.next()) {
                 case "1":
-                    checkBalance(insertedCard);
+                    long balance = checkBalance(insertedCard);
+                    System.out.println("\nBalance: " + balance + "\n");
                     break;
                 case "2":
                     addIncome(insertedCard);
                     break;
                 case "3":
-                    doTransfer();
+                    doTransfer(insertedCard);
                     break;
                 case "4":
                     closeAccount();
@@ -79,27 +82,83 @@ class Account {
         }
     }
 
-    private void checkBalance(long insertedCard) {
+    private long checkBalance(String cardNumber) {
         Database databaseAccess = Database.getInstance();
-        databaseAccess.checkBalance(insertedCard);
-
-        //System.out.println("\nBalance: " + getAccountBalance() + "\n");
+        String balance = databaseAccess.checkBalance(cardNumber);
+        long balance2 = Long.parseLong(balance);
+        return balance2;
     }
 
-    private void addIncome(long insertedCard) {
+    private void addIncome(String insertedCard) {
         Scanner scanner = new Scanner(System.in);
 
         System.out.println("Enter income:");
         long income = scanner.nextLong();
 
         Database databaseAccess = Database.getInstance();
-        databaseAccess.addIncome(insertedCard, income);
+        databaseAccess.insertIncome(insertedCard, income);
+    }
+
+    private void doTransfer(String insertedCard) {
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.println("Transfer");
+        System.out.println("Enter card number:");
+        String recipient = scanner.nextLine();
+
+        boolean isCardCorrect = isCardCorrect(recipient);
+        boolean doesCardExists = doesCardExists(recipient);
+
+
+        if (!isCardCorrect) {
+            System.out.println("Probably you made mistake in the card number. Please try again!");
+        } else if (!doesCardExists) {
+            System.out.println("Such a card does not exist.");
+        } else {
+            System.out.println("Enter how much money you want to transfer:");
+            long amount = scanner.nextLong();
+            //isBalanceSufficient(recipient, amount); później jak połączysz balans z bazą danych
+
+            if (checkBalance(insertedCard) < amount) {
+                System.out.println("Not enough money!");
+            } else{
+                Database databaseAccess = Database.getInstance();
+                databaseAccess.transferMoney(insertedCard, recipient, amount);
+                System.out.println("Success!");
+            }
+        }
+    }
+
+    private boolean isCardCorrect(String cardNumber) {
+
+        boolean correct = false;
+        int answer = Card.checkLuhn(cardNumber);
+
+        if (answer == 1) {
+            correct = true;
+        }
+        return correct;
+    }
+
+    private boolean doesCardExists(String cardNumber) {
+        Database databaseAccess = Database.getInstance();
+        int answer = databaseAccess.checkCardInDb(cardNumber);
+        boolean exists = false;
+        if (answer == 1) {
+            exists = true;
+        }
+        return exists;
+    }
+
+    private void isBalanceSufficient(String cardNumber, long amount) {
+        if (checkBalance(cardNumber) < amount) {
+            System.out.println("Not enough money!");
+        }
+
+        //finish it
     }
 
     private void closeAccount() {
-    }
-
-    private void doTransfer() {
     }
 
     private static String pinGenerator() {
@@ -109,7 +168,7 @@ class Account {
         return pin;
     }
 
-    private static long cardGenerator() {
+    private static String cardGenerator() {
 
         final int[] BIN = new int[]{4, 0, 0, 0, 0, 0};
         final int[] accountIdentifier = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -156,12 +215,11 @@ class Account {
             builder.append(value);
         }
         String numInText = builder.toString();
-        long numInLong = Long.parseLong(numInText);
 
-        return numInLong;
+        return numInText;
     }
 
-    private static void printNewAccountMessage(long cardNumber, String pin) {
+    private static void printNewAccountMessage(String cardNumber, String pin) {
         System.out.println();
         System.out.println("Your card has been created");
         System.out.println("Your card number");
@@ -180,8 +238,6 @@ class Account {
         System.out.println("0. Exit");
         System.out.println();
     }
-
-
 
 
 }
