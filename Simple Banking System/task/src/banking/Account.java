@@ -1,6 +1,5 @@
 package banking;
 
-import java.util.Random;
 import java.util.Scanner;
 
 import static banking.Bank.*;
@@ -13,7 +12,6 @@ class Account {
     }
 
     private static int accountNo = 0;
-
     private static String accountCardNum;
     private static String accountPin;
     private static long accountBalance;
@@ -21,19 +19,16 @@ class Account {
     public static String getAccountCardNum() {
         return accountCardNum;
     }
-
     public static String getAccountPin() {
         return accountPin;
     }
-
     public static long getAccountBalance() {
         return accountBalance;
     }
-
     public static int getAccountNo() {
         return accountNo;
-    }
-
+    }      // czy trzeba generować numer id?
+                                                                // + sprawdzanie w bazie czy istnieje
     public static Account getInstance() {
         if (accInstance == null) { //if there is no instance available... create new one
             accInstance = new Account();
@@ -41,16 +36,22 @@ class Account {
         return accInstance;
     }
 
+    Card cardAccess = Card.getInstance();
+
     void accountCreator() {
 
-        accountCardNum = cardGenerator();
-        accountPin = pinGenerator();
+        accountCardNum = cardAccess.cardGenerator();
+        accountPin = cardAccess.pinGenerator();
         accountBalance = 0L;
         accountNo++;
         printNewAccountMessage(accountCardNum, accountPin);
     }
 
     void insideAccount(String insertedCard, String insertedPin) {
+
+        accountCardNum = insertedCard;
+        accountPin = insertedPin;
+
         Scanner scanner = new Scanner(System.in);
         boolean loggedIn = true;
 
@@ -68,10 +69,11 @@ class Account {
                     doTransfer(insertedCard);
                     break;
                 case "4":
-                    closeAccount();
+                    closeAccount(insertedCard);
+                    loggedIn = false;
                     break;
                 case "5":
-                    System.out.println("\nYou have successfully logged out!\n");
+                    System.out.println("\nYou have successfully logged out!");
                     loggedIn = false;
                     break;
                 case "0":
@@ -84,9 +86,9 @@ class Account {
 
     private long checkBalance(String cardNumber) {
         Database databaseAccess = Database.getInstance();
-        String balance = databaseAccess.checkBalance(cardNumber);
-        long balance2 = Long.parseLong(balance);
-        return balance2;
+        long balance = databaseAccess.checkBalanceInDb(cardNumber);
+        //return Long.parseLong(balance);
+        return balance;
     }
 
     private void addIncome(String insertedCard) {
@@ -97,6 +99,8 @@ class Account {
 
         Database databaseAccess = Database.getInstance();
         databaseAccess.insertIncome(insertedCard, income);
+
+        System.out.println("Income was added!");
     }
 
     private void doTransfer(String insertedCard) {
@@ -106,22 +110,22 @@ class Account {
         System.out.println("Enter card number:");
         String recipient = scanner.nextLine();
 
-        boolean isCardCorrect = isCardCorrect(recipient);
-        boolean doesCardExists = doesCardExists(recipient);
+        boolean isCardCorrect = cardAccess.isCardCorrect(recipient);
+        boolean doesCardExists = cardAccess.isCardInDb(recipient);
 
-
-        if (!isCardCorrect) {
+        if(accountCardNum.equals(recipient)){
+            System.out.println("You can't transfer money to the same account!");
+        }else if (!isCardCorrect) {
             System.out.println("Probably you made mistake in the card number. Please try again!");
         } else if (!doesCardExists) {
             System.out.println("Such a card does not exist.");
         } else {
             System.out.println("Enter how much money you want to transfer:");
             long amount = scanner.nextLong();
-            //isBalanceSufficient(recipient, amount); później jak połączysz balans z bazą danych
 
-            if (checkBalance(insertedCard) < amount) {
+            if (!isBalanceSufficient(accountCardNum, amount)) {
                 System.out.println("Not enough money!");
-            } else{
+            } else {
                 Database databaseAccess = Database.getInstance();
                 databaseAccess.transferMoney(insertedCard, recipient, amount);
                 System.out.println("Success!");
@@ -129,94 +133,20 @@ class Account {
         }
     }
 
-    private boolean isCardCorrect(String cardNumber) {
-
-        boolean correct = false;
-        int answer = Card.checkLuhn(cardNumber);
-
-        if (answer == 1) {
-            correct = true;
-        }
-        return correct;
-    }
-
-    private boolean doesCardExists(String cardNumber) {
+    private boolean isBalanceSufficient(String cardNumber, long amount) {
+        boolean sufficient = false;
         Database databaseAccess = Database.getInstance();
-        int answer = databaseAccess.checkCardInDb(cardNumber);
-        boolean exists = false;
-        if (answer == 1) {
-            exists = true;
+        long balanceInDb = databaseAccess.checkBalanceInDb(cardNumber);
+        if (balanceInDb >= amount) {
+            sufficient = true;
         }
-        return exists;
+        return sufficient;
     }
 
-    private void isBalanceSufficient(String cardNumber, long amount) {
-        if (checkBalance(cardNumber) < amount) {
-            System.out.println("Not enough money!");
-        }
-
-        //finish it
-    }
-
-    private void closeAccount() {
-    }
-
-    private static String pinGenerator() {
-        Random random = new Random();
-        int randomNum = random.nextInt(10000);
-        String pin = String.format("%04d", randomNum);
-        return pin;
-    }
-
-    private static String cardGenerator() {
-
-        final int[] BIN = new int[]{4, 0, 0, 0, 0, 0};
-        final int[] accountIdentifier = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-        final int[] cardNumArr = new int[BIN.length + accountIdentifier.length];
-
-        //account identifier creating
-        for (int i = 0; i <= accountIdentifier.length - 1; i++) {
-            Random random = new Random();
-            int number = random.nextInt(10);
-            accountIdentifier[i] = number;
-        }
-
-        System.arraycopy(BIN, 0, cardNumArr, 0, BIN.length);
-        System.arraycopy(accountIdentifier, 0, cardNumArr, BIN.length, accountIdentifier.length);
-
-        int sum = 0;
-        int checksum;
-        for (int i = 0; i < cardNumArr.length - 1; i++) {
-            int product;
-            if (i % 2 != 0) {
-                product = cardNumArr[i] * 1;
-            } else {
-                product = cardNumArr[i] * 2;
-            }
-            if (product > 9)
-                product -= 9;
-            sum += product;
-        }
-
-        checksum = cardNumArr[15];
-
-        for (int i = 0; i <= 10; i++) {
-            if ((sum + checksum) % 10 != 0) {
-                checksum = i;
-            } else {
-                break;
-            }
-        }
-
-        cardNumArr[15] = checksum;
-
-        StringBuilder builder = new StringBuilder();
-        for (int value : cardNumArr) {
-            builder.append(value);
-        }
-        String numInText = builder.toString();
-
-        return numInText;
+    private void closeAccount(String insertedCard) {
+        Database databaseAccess = Database.getInstance();
+        databaseAccess.deleteAccount(insertedCard);
+        System.out.println("\nThe account has been closed!");
     }
 
     private static void printNewAccountMessage(String cardNumber, String pin) {

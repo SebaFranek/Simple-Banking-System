@@ -3,11 +3,9 @@ package banking;
 public class Main {
 
     private static String fileName;
-
     public static String getFileName() {
         return fileName;
     }
-
     public static void main(String[] args) {
 
         args = new String[]{"-fileName", "card.s3db"};
@@ -23,7 +21,7 @@ public class Main {
         }
 
         Database databaseAccess = Database.getInstance();
-        databaseAccess.createDatabase();
+        //databaseAccess.createDatabase();   //do usunięcia? będzie sprawdzało połączenie
         databaseAccess.createTableCard();
 
         Bank bank = new Bank();

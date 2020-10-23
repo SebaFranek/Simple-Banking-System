@@ -7,19 +7,15 @@ import static banking.Account.*;
 class Bank {
 
     private static boolean sessionOpen = true;
-
     static boolean isSessionOpen() {
         return sessionOpen;
     }
-
     static void setSessionOpen(boolean status) {
         sessionOpen = status;
     }
 
     void session() {
-
         Scanner scanner = new Scanner(System.in);
-
         while (sessionOpen) {
             printMainMenu();
             switch (scanner.next()) {

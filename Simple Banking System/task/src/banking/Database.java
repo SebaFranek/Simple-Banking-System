@@ -4,12 +4,9 @@ import java.sql.*;
 
 class Database {
 
-
     private static volatile Database dbInstance = null;
-
     private Database() {
     }
-
     public static Database getInstance() {
         if (dbInstance == null) { //if there is no instance available... create new one
             dbInstance = new Database();
@@ -40,21 +37,22 @@ class Database {
         return conn;
     }
 
+    //do usunięcia? Albo niech zostanie, będzie do sprawdzania połączenia przed logowaniem
     /**
      * Create a new database
      *
      */
-    void createDatabase() {
+    /*void createDatabase() {
 
         try (Connection conn = DriverManager.getConnection(url)) {
             if (conn != null) {
-                DatabaseMetaData meta = conn.getMetaData();
+
             }
 
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
-    }
+    }*/
 
     /**
      * Create a new table "card" in the test database
@@ -94,27 +92,6 @@ class Database {
         }
     }
 
-    /**
-     * Checks the amount of money on the chosen card
-     *
-     * @return
-     */
-    String checkBalance(String cardNumber){
-
-        String sql = "SELECT balance FROM card WHERE number = " + cardNumber;
-        String balance = "";
-        try (Connection conn = this.connect();
-             Statement stmt  = conn.createStatement();
-             ResultSet rs    = stmt.executeQuery(sql)){
-
-            balance = rs.getString("balance");
-
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-        }
-        return balance;
-    }
-
     void insertIncome(String insertedCard, long income) {
         String sql = "UPDATE card\n" +
                 "SET balance = balance + " + income + "\n" +
@@ -130,9 +107,9 @@ class Database {
 
     /**
      * Transfer money between accounts in database
-     ** @param insertedCard card from which funds are withdrawn
-     ** @param recipient card to which funds are transferred
-     ** @param amount the amount of funds to be transferred
+     ** @insertedCard card from which funds are withdrawn
+     ** @recipient card to which funds are transferred
+     ** @amount the amount of funds to be transferred
      *
      */
     void transferMoney(String insertedCard, String recipient, long amount){
@@ -165,11 +142,18 @@ class Database {
         }
     }
 
+    /**
+     * Checking card number in database
+     ** @cardNumber card number to check
+     *
+     */
     int checkCardInDb(String cardNumber) {
+
         String sql = "SELECT EXISTS ("
                     + "SELECT number\n"
                     + "FROM card\n"
                     + "WHERE number = " + cardNumber + ")";
+
         int isExisting = 0;
 
         try (Connection conn = this.connect();
@@ -185,6 +169,71 @@ class Database {
         }
 
         return isExisting;
+    }
+
+    int checkCardPinInDb(String cardNumber, String pin) {
+
+        String sql = "SELECT EXISTS ("
+                + "SELECT pin\n"
+                + "FROM card\n"
+                + "WHERE number = " + cardNumber + " "
+                + "\nAND pin = '" + pin + "')";
+
+        int isExisting = 0;
+
+        try (Connection conn = this.connect();
+             Statement stmt  = conn.createStatement();
+             ResultSet rs    = stmt.executeQuery(sql)){
+
+            isExisting = rs.getInt(1);
+
+
+
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+
+        return isExisting;
+
+    }
+
+    /**
+     * Checks the amount of money on the chosen card
+     *
+     * @cardNumber  card number to check
+     */
+    long checkBalanceInDb(String cardNumber) {
+
+        String sql = "SELECT balance\n"
+                + "FROM card\n"
+                + "WHERE number = " + cardNumber;
+
+        String balance = "";
+        try (Connection conn = this.connect();
+             Statement stmt  = conn.createStatement();
+             ResultSet rs    = stmt.executeQuery(sql)){
+
+            balance = rs.getString("balance");
+
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        return Long.parseLong(balance);
+
+    }
+
+    void deleteAccount(String cardNumber) {
+
+        String sql = "DELETE FROM card\n"
+                + "WHERE number = " + cardNumber;
+
+        try (Connection conn = this.connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+
     }
 
 }

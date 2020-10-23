@@ -1,9 +1,6 @@
-
 package banking;
 
 import java.util.Scanner;
-
-import static banking.Account.*;
 
 class Logger {
 
@@ -12,31 +9,24 @@ class Logger {
 
     void attemptLogin() {
 
+        Card cardAccess = Card.getInstance();
         Scanner scanner = new Scanner(System.in);
 
-        System.out.println();
-        System.out.println("Enter your card number:");
+        System.out.println("\nEnter your card number:");
         insertedCard = scanner.nextLine();
         System.out.println("Enter your PIN:");
         insertedPin = scanner.nextLine();
 
-        //Database databaseAccess = Database.getInstance();
-        //databaseAccess.checkCard(insertedCard);
-
-        //robotka na później - porównywnaie z ostatnią kartą z bazy danych
-        //aktualnie porównuje ze zmienną deklarowaną przy tworzeniu konta
-        //poniżej
-
-
-        if (!insertedCard.equals(getAccountCardNum()) || !insertedPin.equals(getAccountPin())) {
-            System.out.println("Wrong card number or PIN!");
-            System.out.println();
+        if (!cardAccess.isCardInDb(insertedCard)) {                        // w przyszłości podzielić na numer i pin
+            System.out.println("Wrong card number or PIN!\n");             // w przyszłości podzielić na numer i pin
+        } else if (!cardAccess.isPinCorrect(insertedCard, insertedPin)) {  // w przyszłości podzielić na numer i pin
+            System.out.println("Wrong card number or PIN!\n");             // w przyszłości podzielić na numer i pin
         } else {
-            System.out.println("You have successfully logged in!");
-            System.out.println();
+            System.out.println("\nYou have successfully logged in!");
             Account accountAccess = Account.getInstance();
             accountAccess.insideAccount(insertedCard, insertedPin);
         }
+
     }
 }
 
