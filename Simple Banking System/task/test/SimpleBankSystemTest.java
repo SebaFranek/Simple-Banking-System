@@ -19,7 +19,7 @@ import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class BankingSystem extends StageTest<String> {
+public class SimpleBankSystemTest extends StageTest<String> {
 
     private static final String databaseFileName = "card.s3db";
     private static final String tempDatabaseFileName = "tempDatabase.s3db";

@@ -1,14 +1,14 @@
 package banking;
 
-import org.sqlite.SQLiteDataSource;
-
 import java.sql.*;
 
 class Database {
 
 
     private static volatile Database dbInstance = null;
-    private Database(){}
+
+    private Database() {
+    }
 
     public static Database getInstance() {
         if (dbInstance == null) { //if there is no instance available... create new one
@@ -17,85 +17,174 @@ class Database {
         return dbInstance;
     }
 
-
-    private SQLiteDataSource dataSource = new SQLiteDataSource();
+    /**
+     * * @param fileName the database file name
+     * * @param url the database source path
+     *
+     */
     private String fileName = Main.getFileName();
     private String url = "jdbc:sqlite:" + fileName;
     //private String url = "jdbc:sqlite:Simple Banking System\\task\\src\\banking\\" + fileName;
 
-    void createDatabase(){
-
-        dataSource.setUrl(url);
-
-        try (Connection con = dataSource.getConnection()) {
-
+    /**
+     * Connect to a database
+     *
+     */
+    private Connection connect() {
+        Connection conn = null;
+        try {
+            conn = DriverManager.getConnection(url);    // create a connection to the database
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
+        return conn;
     }
 
-    void createTableCard(){
+    /**
+     * Create a new database
+     *
+     */
+    void createDatabase() {
 
-        dataSource.setUrl(url);
-
-        try (Connection con = dataSource.getConnection()) {
-            // Statement creation
-            try (Statement statement = con.createStatement()) {
-                // Statement execution
-                statement.executeUpdate("CREATE TABLE IF NOT EXISTS card(" +
-                        "id INTEGER PRIMARY KEY ON CONFLICT REPLACE," +
-                        "number TEXT," +
-                        "pin TEXT," +
-                        "balance INTEGER DEFAULT 0)");
-            } catch (SQLException e) {
-                e.printStackTrace();
+        try (Connection conn = DriverManager.getConnection(url)) {
+            if (conn != null) {
+                DatabaseMetaData meta = conn.getMetaData();
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
 
-    void insertNewAccount(int id, String number, String pin, long balance){
-
-        String sql = "INSERT INTO card(id,number,pin,balance) VALUES(?,?,?,?)";
-
-        try (Connection con = dataSource.getConnection();
-             PreparedStatement statement = con.prepareStatement(sql)) {
-            statement.setInt(1, id);
-            statement.setString(2, number);
-            statement.setString(3, pin);
-            statement.setLong(4, balance);
-            statement.executeUpdate();
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
     }
 
-    void addIncome(long insertedCard, long income){
+    /**
+     * Create a new table "card" in the test database
+     *
+     */
+    void createTableCard() {
+
+
+        String sql = "CREATE TABLE IF NOT EXISTS card (\n"
+                + "id INTEGER PRIMARY KEY ON CONFLICT REPLACE,\n"
+                + "number TEXT,\n"
+                + "pin TEXT,\n"
+                + "balance INTEGER DEFAULT 0\n"
+                + ");";
+
+        try (Connection conn = DriverManager.getConnection(url);
+             Statement stmt = conn.createStatement()) {
+            stmt.execute(sql);
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    void insertNewAccount(int id, String number, String pin, long balance) {
+
+        String sql = "INSERT INTO card(id,number,pin,balance) VALUES(?,?,?,?)";
+
+        try (Connection conn = this.connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, id);
+            pstmt.setString(2, number);
+            pstmt.setString(3, pin);
+            pstmt.setLong(4, balance);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    /**
+     * Checks the amount of money on the chosen card
+     *
+     * @return
+     */
+    String checkBalance(String cardNumber){
+
+        String sql = "SELECT balance FROM card WHERE number = " + cardNumber;
+        String balance = "";
+        try (Connection conn = this.connect();
+             Statement stmt  = conn.createStatement();
+             ResultSet rs    = stmt.executeQuery(sql)){
+
+            balance = rs.getString("balance");
+
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        return balance;
+    }
+
+    void insertIncome(String insertedCard, long income) {
         String sql = "UPDATE card\n" +
                 "SET balance = balance + " + income + "\n" +
                 "WHERE number = " + insertedCard + ";";
 
-        try (Connection con = dataSource.getConnection();
-             PreparedStatement statement = con.prepareStatement(sql)) {
-            statement.executeUpdate();
+        try (Connection conn = this.connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.executeUpdate();
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
     }
 
-    void checkBalance(long insertedCard){
-        String sql = "SELECT balance FROM card";
-        //String sql = "SELECT balance FROM card WHERE number =" + insertedCard + ";";
+    /**
+     * Transfer money between accounts in database
+     ** @param insertedCard card from which funds are withdrawn
+     ** @param recipient card to which funds are transferred
+     ** @param amount the amount of funds to be transferred
+     *
+     */
+    void transferMoney(String insertedCard, String recipient, long amount){
 
-        try (Connection con = dataSource.getConnection();
-             PreparedStatement statement = con.prepareStatement(sql);
-             ResultSet result = statement.executeQuery(sql)){
-            while (result.next()) {
-                System.out.println(result.getLong("balance") +  "\t");
-            }
+        //withdrawing funds from the currently logged account
+        String sql1 = "UPDATE card SET balance = balance - ? WHERE number = ?";
+
+        try (Connection conn = this.connect();
+             PreparedStatement pstmt1  = conn.prepareStatement(sql1)){
+            pstmt1.setLong(1,amount);
+            pstmt1.setString(2,insertedCard);
+
+            pstmt1.executeUpdate();
+
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+
+        //transferring funds to the target account
+        String sql2 = "UPDATE card SET balance = balance + ? WHERE number = ?";
+
+        try (Connection conn = this.connect();
+             PreparedStatement pstmt2  = conn.prepareStatement(sql2)){
+            pstmt2.setLong(1,amount);
+            pstmt2.setString(2,recipient);
+            pstmt2.executeUpdate();
+
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
     }
+
+    int checkCardInDb(String cardNumber) {
+        String sql = "SELECT EXISTS ("
+                    + "SELECT number\n"
+                    + "FROM card\n"
+                    + "WHERE number = " + cardNumber + ")";
+        int isExisting = 0;
+
+        try (Connection conn = this.connect();
+             Statement stmt  = conn.createStatement();
+             ResultSet rs    = stmt.executeQuery(sql)){
+
+            isExisting = rs.getInt(1);
+
+
+
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+
+        return isExisting;
+    }
+
 }
