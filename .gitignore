@@ -1,0 +1,7 @@
+# Ignoring directories
+# Both the directory itself and its contents will be ignored.
+bin/
+gen/
+.idea/
+.gradle/
+gradle/
