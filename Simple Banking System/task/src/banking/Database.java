@@ -1,5 +1,6 @@
 package banking;
 
+import java.math.BigDecimal;
 import java.sql.*;
 
 class Database {
@@ -76,7 +77,7 @@ class Database {
         }
     }
 
-    void insertNewAccount(int id, String number, String pin, long balance) {
+    void insertNewAccount(int id, String number, String pin, BigDecimal balance) {
 
         String sql = "INSERT INTO card(id,number,pin,balance) VALUES(?,?,?,?)";
 
@@ -85,14 +86,14 @@ class Database {
             pstmt.setInt(1, id);
             pstmt.setString(2, number);
             pstmt.setString(3, pin);
-            pstmt.setLong(4, balance);
+            pstmt.setBigDecimal(4, balance);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
     }
 
-    void insertIncome(String insertedCard, long income) {
+    void insertIncome(String insertedCard, BigDecimal income) {
         String sql = "UPDATE card\n" +
                 "SET balance = balance + " + income + "\n" +
                 "WHERE number = " + insertedCard + ";";
@@ -112,14 +113,14 @@ class Database {
      ** @amount the amount of funds to be transferred
      *
      */
-    void transferMoney(String insertedCard, String recipient, long amount){
+    void transferMoney(String insertedCard, String recipient, BigDecimal amount){
 
         //withdrawing funds from the currently logged account
         String sql1 = "UPDATE card SET balance = balance - ? WHERE number = ?";
 
         try (Connection conn = this.connect();
              PreparedStatement pstmt1  = conn.prepareStatement(sql1)){
-            pstmt1.setLong(1,amount);
+            pstmt1.setBigDecimal(1,amount);
             pstmt1.setString(2,insertedCard);
 
             pstmt1.executeUpdate();
@@ -133,7 +134,7 @@ class Database {
 
         try (Connection conn = this.connect();
              PreparedStatement pstmt2  = conn.prepareStatement(sql2)){
-            pstmt2.setLong(1,amount);
+            pstmt2.setBigDecimal(1,amount);
             pstmt2.setString(2,recipient);
             pstmt2.executeUpdate();
 

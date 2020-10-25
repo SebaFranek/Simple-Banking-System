@@ -1,5 +1,6 @@
 package banking;
 
+import java.math.BigDecimal;
 import java.util.Scanner;
 
 import static banking.Bank.*;
@@ -14,7 +15,7 @@ class Account {
     private static int accountNo = 0;
     private static String accountCardNum;
     private static String accountPin;
-    private static long accountBalance;
+    static BigDecimal accountBalance;
 
     public static String getAccountCardNum() {
         return accountCardNum;
@@ -22,7 +23,7 @@ class Account {
     public static String getAccountPin() {
         return accountPin;
     }
-    public static long getAccountBalance() {
+    public static BigDecimal getAccountBalance() {
         return accountBalance;
     }
     public static int getAccountNo() {
@@ -42,7 +43,7 @@ class Account {
 
         accountCardNum = cardAccess.cardGenerator();
         accountPin = cardAccess.pinGenerator();
-        accountBalance = 0L;
+        accountBalance = new BigDecimal(0);
         accountNo++;
         printNewAccountMessage(accountCardNum, accountPin);
     }
@@ -59,8 +60,7 @@ class Account {
             printInsideAccountMessage();
             switch (scanner.next()) {
                 case "1":
-                    long balance = checkBalance(insertedCard);
-                    System.out.println("\nBalance: " + balance + "\n");
+                    System.out.println("\nBalance: " + checkBalance(insertedCard) + "\n");
                     break;
                 case "2":
                     addIncome(insertedCard);
@@ -84,9 +84,9 @@ class Account {
         }
     }
 
-    private long checkBalance(String cardNumber) {
+    private BigDecimal checkBalance(String cardNumber) {
         Database databaseAccess = Database.getInstance();
-        long balance = databaseAccess.checkBalanceInDb(cardNumber);
+        BigDecimal balance = new BigDecimal(databaseAccess.checkBalanceInDb(cardNumber));
         //return Long.parseLong(balance);
         return balance;
     }
@@ -95,7 +95,7 @@ class Account {
         Scanner scanner = new Scanner(System.in);
 
         System.out.println("Enter income:");
-        long income = scanner.nextLong();
+        BigDecimal income = new BigDecimal(scanner.nextLong());
 
         Database databaseAccess = Database.getInstance();
         databaseAccess.insertIncome(insertedCard, income);
@@ -121,7 +121,7 @@ class Account {
             System.out.println("Such a card does not exist.");
         } else {
             System.out.println("Enter how much money you want to transfer:");
-            long amount = scanner.nextLong();
+            BigDecimal amount = new BigDecimal(scanner.nextLong());
 
             if (!isBalanceSufficient(accountCardNum, amount)) {
                 System.out.println("Not enough money!");
@@ -133,11 +133,11 @@ class Account {
         }
     }
 
-    private boolean isBalanceSufficient(String cardNumber, long amount) {
+    private boolean isBalanceSufficient(String cardNumber, BigDecimal amount) {
         boolean sufficient = false;
         Database databaseAccess = Database.getInstance();
-        long balanceInDb = databaseAccess.checkBalanceInDb(cardNumber);
-        if (balanceInDb >= amount) {
+        BigDecimal balanceInDb = new BigDecimal(databaseAccess.checkBalanceInDb(cardNumber));
+        if (balanceInDb.compareTo(amount) >= 0) {
             sufficient = true;
         }
         return sufficient;
@@ -168,6 +168,5 @@ class Account {
         System.out.println("0. Exit");
         System.out.println();
     }
-
 
 }
