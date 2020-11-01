@@ -130,3 +130,10 @@ fabric.properties
 hs_err_pid*
 
 # End of https://www.toptal.com/developers/gitignore/api/java,intellij
+/Simple Banking System/task/src/banking/
+
+
+Problems/
+.gradle/
+Simple Banking System/task/out/production/
+
