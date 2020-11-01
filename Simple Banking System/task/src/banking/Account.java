@@ -12,23 +12,23 @@ class Account {
     private Account() {
     }
 
-    private static int accountNo = 0;
-    private static String accountCardNum;
-    private static String accountPin;
-    static BigDecimal accountBalance;
+    private int accountNo = 0;
+    private String accountCardNum;
+    private String accountPin;
+    private BigDecimal accountBalance;
 
-    public static String getAccountCardNum() {
+    public String getAccountCardNum() {
         return accountCardNum;
     }
-    public static String getAccountPin() {
+    public String getAccountPin() {
         return accountPin;
     }
-    public static BigDecimal getAccountBalance() {
+    public BigDecimal getAccountBalance() {
         return accountBalance;
     }
-    public static int getAccountNo() {
+    public int getAccountNo() {
         return accountNo;
-    }      // czy trzeba generować numer id?
+    }      // czy trzeba generować nowy numer id?
                                                                 // + sprawdzanie w bazie czy istnieje
     public static Account getInstance() {
         if (accInstance == null) { //if there is no instance available... create new one
@@ -80,6 +80,9 @@ class Account {
                     System.out.println("\nBye!");
                     setSessionOpen(false);
                     break;
+                default:
+                    System.out.println("\nWrong input! \nTry again!");
+                    break;
             }
         }
     }
@@ -87,7 +90,6 @@ class Account {
     private BigDecimal checkBalance(String cardNumber) {
         Database databaseAccess = Database.getInstance();
         BigDecimal balance = new BigDecimal(databaseAccess.checkBalanceInDb(cardNumber));
-        //return Long.parseLong(balance);
         return balance;
     }
 

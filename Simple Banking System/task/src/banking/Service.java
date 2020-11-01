@@ -2,10 +2,22 @@ package banking;
 
 import java.util.Scanner;
 
-class Logger {
+public class Service {
 
     private String insertedCard;
     private String insertedPin;
+
+
+    void createAccount() {
+        Account accountAccess = Account.getInstance();
+        accountAccess.accountCreator();
+        Database databaseAccess = Database.getInstance();
+        databaseAccess.insertNewAccount(accountAccess.getAccountNo(),
+                String.valueOf(accountAccess.getAccountCardNum()),
+                String.valueOf(accountAccess.getAccountPin()),
+                accountAccess.getAccountBalance());
+
+    }
 
     void attemptLogin() {
 
@@ -29,4 +41,3 @@ class Logger {
 
     }
 }
-

@@ -16,17 +16,15 @@ class Database {
     }
 
     /**
-     * * @param fileName the database file name
-     * * @param url the database source path
+     * * @param fileName is a database file name
+     * * @param url is a database source path
      *
      */
-    private String fileName = Main.getFileName();
-    private String url = "jdbc:sqlite:" + fileName;
-    //private String url = "jdbc:sqlite:Simple Banking System\\task\\src\\banking\\" + fileName;
+    private String fileName = "card.s3db";
+    private String url = "jdbc:sqlite:Simple Banking System\\task\\src\\banking\\" + fileName;
 
     /**
-     * Connect to a database
-     *
+     * Connects to the database only for methods in this class
      */
     private Connection connect() {
         Connection conn = null;
@@ -38,29 +36,31 @@ class Database {
         return conn;
     }
 
-    //do usunięcia? Albo niech zostanie, będzie do sprawdzania połączenia przed logowaniem
     /**
-     * Create a new database
+     * Creates a file of new database
      *
      */
-    /*void createDatabase() {
+    /*
+    void createDatabase() {
 
         try (Connection conn = DriverManager.getConnection(url)) {
             if (conn != null) {
-
+                DatabaseMetaData meta = conn.getMetaData();
+                System.out.println("The driver name is " + meta.getDriverName());
+                System.out.println("A new database has been created.");
             }
 
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
-    }*/
+    }
+    */
 
     /**
-     * Create a new table "card" in the test database
+     * Creates a new table "card" if it doesn't exist in the database
      *
      */
     void createTableCard() {
-
 
         String sql = "CREATE TABLE IF NOT EXISTS card (\n"
                 + "id INTEGER PRIMARY KEY ON CONFLICT REPLACE,\n"
@@ -77,6 +77,15 @@ class Database {
         }
     }
 
+    /**
+     * Inserts a new account into card table in database
+     *
+     * @param id is a id number of created card
+     * @param number is a number of created card
+     * @param pin is a pin of created card
+     * @param balance is a balance of created card
+     *
+     */
     void insertNewAccount(int id, String number, String pin, BigDecimal balance) {
 
         String sql = "INSERT INTO card(id,number,pin,balance) VALUES(?,?,?,?)";
@@ -93,10 +102,18 @@ class Database {
         }
     }
 
-    void insertIncome(String insertedCard, BigDecimal income) {
+    /**
+     * Inserts a income to the given card
+     *
+     * @param cardNumber is a id number of created card
+     * @param income is a deposit amount
+     *
+     */
+
+    void insertIncome(String cardNumber, BigDecimal income) {
         String sql = "UPDATE card\n" +
                 "SET balance = balance + " + income + "\n" +
-                "WHERE number = " + insertedCard + ";";
+                "WHERE number = " + cardNumber + ";";
 
         try (Connection conn = this.connect();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -107,13 +124,13 @@ class Database {
     }
 
     /**
-     * Transfer money between accounts in database
-     ** @insertedCard card from which funds are withdrawn
-     ** @recipient card to which funds are transferred
-     ** @amount the amount of funds to be transferred
+     * Transfers money between accounts in database
+     ** @param cardNumber card from which funds are withdrawn
+     ** @param recipient card to which funds are transferred
+     ** @param amount the amount of funds to be transferred
      *
      */
-    void transferMoney(String insertedCard, String recipient, BigDecimal amount){
+    void transferMoney(String cardNumber, String recipient, BigDecimal amount){
 
         //withdrawing funds from the currently logged account
         String sql1 = "UPDATE card SET balance = balance - ? WHERE number = ?";
@@ -121,7 +138,7 @@ class Database {
         try (Connection conn = this.connect();
              PreparedStatement pstmt1  = conn.prepareStatement(sql1)){
             pstmt1.setBigDecimal(1,amount);
-            pstmt1.setString(2,insertedCard);
+            pstmt1.setString(2,cardNumber);
 
             pstmt1.executeUpdate();
 
@@ -144,8 +161,8 @@ class Database {
     }
 
     /**
-     * Checking card number in database
-     ** @cardNumber card number to check
+     * Checks card number in database
+     ** @param cardNumber card number to check
      *
      */
     int checkCardInDb(String cardNumber) {
@@ -172,6 +189,12 @@ class Database {
         return isExisting;
     }
 
+    /**
+     * Checks the pin of given card.
+     *
+     * @param cardNumber  card number
+     * @param pin pin to be checked
+     */
     int checkCardPinInDb(String cardNumber, String pin) {
 
         String sql = "SELECT EXISTS ("
@@ -201,7 +224,7 @@ class Database {
     /**
      * Checks the amount of money on the chosen card
      *
-     * @cardNumber  card number to check
+     * @param cardNumber  card number to be checked
      */
     long checkBalanceInDb(String cardNumber) {
 
@@ -223,6 +246,11 @@ class Database {
 
     }
 
+    /**
+     * Deletes a row (which is a card account) from the table.
+     *
+     * @param cardNumber card number to delete
+     */
     void deleteAccount(String cardNumber) {
 
         String sql = "DELETE FROM card\n"

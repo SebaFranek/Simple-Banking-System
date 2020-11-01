@@ -14,24 +14,25 @@ class Bank {
         sessionOpen = status;
     }
 
+    Service service = new Service();
+
     void session() {
         Scanner scanner = new Scanner(System.in);
         while (sessionOpen) {
             printMainMenu();
             switch (scanner.next()) {
                 case "1":
-                    Account accountAccess = Account.getInstance();
-                    accountAccess.accountCreator();
-                    Database databaseAccess = Database.getInstance();
-                    databaseAccess.insertNewAccount(getAccountNo(), String.valueOf(getAccountCardNum()), String.valueOf(getAccountPin()), getAccountBalance());
+                    service.createAccount();
                     break;
                 case "2":
-                    Logger logger = new Logger();
-                    logger.attemptLogin();
+                    service.attemptLogin();
                     break;
                 case "0":
                     System.out.println("\nBye!");
                     sessionOpen = false;
+                    break;
+                default:
+                    System.out.println("\nWrong input! \nTry again!");
                     break;
             }
         }
